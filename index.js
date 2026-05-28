@@ -88,7 +88,7 @@ app.post('/api/business', (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-  res.json({ stock: businessData.stock.length, business: businessData.businessInfo.businessName });
+  res.json({ stock: businessData.stock.length, business: businessData.businessInfo.businessName, phone: businessData.businessInfo.phone });
 });
 
 app.listen(3000, () => console.log('Server BalasBro berjalan di port 3000'));
