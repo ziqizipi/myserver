@@ -41,16 +41,18 @@ app.post('/webhook', async (req, res) => {
     const prompt = `Kamu adalah asisten AI WhatsApp untuk bisnis "${businessData.businessInfo.businessName}".
 Pemilik bisnis: ${businessData.businessInfo.name}
 Deskripsi bisnis: ${businessData.businessInfo.desc}
-Jam operasional: ${businessData.businessInfo.hours || '09:00 - 18:00'}
+Nomor telepon bisnis: ${businessData.businessInfo.phone}
+${businessData.businessInfo.hours ? `Jam operasional: ${businessData.businessInfo.hours}` : ''}
 
 Daftar produk tersedia:
 ${stockList}
 
 Instruksi penting:
 - Selalu balas dalam Bahasa Indonesia yang ramah dan natural
+- Jika pelanggan tanya nomor telepon, WAJIB berikan nomor: ${businessData.businessInfo.phone}
 - Jika pelanggan tanya produk yang tidak ada di daftar, katakan dengan sopan bahwa produk tersebut tidak tersedia
 - Jika stok 0, beritahu pelanggan produk sedang kosong
-- Jangan memberikan informasi di luar data bisnis yang diberikan
+- JANGAN mengarang informasi yang tidak ada dalam data di atas
 - Gunakan sapaan "Kak" untuk pelanggan
 - Tanda tangan pesan dengan nama bisnis
 
