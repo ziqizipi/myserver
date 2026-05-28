@@ -17,6 +17,7 @@ app.use((req, res, next) => {
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // In-memory store
+let conversations = [];
 let businessData = {
   businessInfo: {
     name: 'Pemilik',
@@ -30,6 +31,7 @@ let businessData = {
 // WhatsApp webhook
 app.post('/webhook', async (req, res) => {
   const incomingMsg = req.body.Body;
+  const from = req.body.From;
   console.log('Pesan masuk:', incomingMsg);
   const twiml = new twilio.twiml.MessagingResponse();
 
@@ -65,6 +67,29 @@ Pesan pelanggan: ${incomingMsg}`;
 
     const text = response.text;
     console.log('Respons AI:', text);
+
+    // Save conversation
+    const existingConvo = conversations.find(c => c.from === from);
+    if (existingConvo) {
+      existingConvo.messages.push({ role: 'customer', text: incomingMsg, time: new Date().toISOString() });
+      existingConvo.messages.push({ role: 'ai', text: text, time: new Date().toISOString() });
+      existingConvo.lastMessage = incomingMsg;
+      existingConvo.lastTime = new Date().toISOString();
+      existingConvo.unread = true;
+    } else {
+      conversations.push({
+        from,
+        name: from.replace('whatsapp:', ''),
+        lastMessage: incomingMsg,
+        lastTime: new Date().toISOString(),
+        unread: true,
+        messages: [
+          { role: 'customer', text: incomingMsg, time: new Date().toISOString() },
+          { role: 'ai', text: text, time: new Date().toISOString() }
+        ]
+      });
+    }
+
     twiml.message(text);
   } catch (err) {
     console.log('Error:', err.message);
@@ -91,6 +116,18 @@ app.post('/api/business', (req, res) => {
 
 app.get('/api/status', (req, res) => {
   res.json({ stock: businessData.stock.length, business: businessData.businessInfo.businessName, phone: businessData.businessInfo.phone });
+});
+
+// Get all conversations
+app.get('/api/conversations', (req, res) => {
+  res.json(conversations);
+});
+
+// Mark conversation as read
+app.post('/api/conversations/:from/read', (req, res) => {
+  const convo = conversations.find(c => c.from === decodeURIComponent(req.params.from));
+  if (convo) convo.unread = false;
+  res.json({ success: true });
 });
 
 app.listen(3000, () => console.log('Server BalasBro berjalan di port 3000'));
