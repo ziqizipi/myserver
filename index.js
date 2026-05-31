@@ -130,4 +130,60 @@ app.post('/api/conversations/:from/read', (req, res) => {
   res.json({ success: true });
 });
 
+// AI Insights endpoint
+app.get('/api/insights', async (req, res) => {
+  if (conversations.length === 0) {
+    return res.json({
+      popularProducts: [],
+      mostAsked: [],
+      customerIntents: [],
+      summary: 'Belum ada data percakapan untuk dianalisis.'
+    });
+  }
+
+  try {
+    // Extract all customer messages
+    const allMessages = conversations.flatMap(c =>
+      c.messages.filter(m => m.role === 'customer').map(m => m.text)
+    );
+
+    const prompt = `Kamu adalah analis bisnis. Analisis pesan-pesan pelanggan berikut dari toko "${businessData.businessInfo.businessName}":
+
+${allMessages.map((m, i) => `${i + 1}. "${m}"`).join('\n')}
+
+Daftar produk toko:
+${businessData.stock.map(p => p.name).join(', ') || 'Tidak ada data produk'}
+
+Berikan analisis dalam format JSON berikut (HANYA JSON, tidak ada teks lain):
+{
+  "popularProducts": [
+    { "name": "nama produk", "count": jumlah_sebutan, "percentage": persentase }
+  ],
+  "mostAsked": [
+    { "question": "pertanyaan umum", "count": jumlah, "category": "kategori" }
+  ],
+  "customerIntents": [
+    { "intent": "nama intent", "count": jumlah, "percentage": persentase, "color": "warna hex" }
+  ],
+  "summary": "ringkasan singkat 1-2 kalimat tentang tren pelanggan"
+}
+
+Untuk customerIntents, gunakan kategori: Cek Stok, Tanya Harga, Info Produk, Jam Buka, Komplain, Lainnya
+Untuk warna intent gunakan: #3a7a55, #f59e0b, #3b82f6, #8b5cf6, #ef4444, #6b7280
+Maksimal 5 item per kategori.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-lite',
+      contents: prompt
+    });
+
+    const text = response.text.replace(/```json|```/g, '').trim();
+    const insights = JSON.parse(text);
+    res.json(insights);
+  } catch (err) {
+    console.log('Insights error:', err.message);
+    res.status(500).json({ error: 'Gagal menganalisis data' });
+  }
+});
+
 app.listen(3000, () => console.log('Server BalasBro berjalan di port 3000'));
