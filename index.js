@@ -186,4 +186,18 @@ Maksimal 5 item per kategori.`;
   }
 });
 
+app.post('/api/reset', (req, res) => {
+  conversations = [];
+  businessData = {
+    businessInfo: {
+      name: 'Pemilik',
+      businessName: 'Toko Kami',
+      phone: '',
+      desc: 'Toko dengan pelayanan terbaik.'
+    },
+    stock: []
+  };
+  res.json({ success: true });
+});
+
 app.listen(3000, () => console.log('Server BalasBro berjalan di port 3000'));
